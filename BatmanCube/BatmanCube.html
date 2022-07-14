@@ -49,11 +49,18 @@
         varying vec2 fTexCoord;
 
         uniform sampler2D texture;
+        uniform bool drawBlack;
 
-        void
-        main()
+        void main()
         {
-            gl_FragColor = fColor * texture2D( texture, fTexCoord );
+            if (drawBlack)
+            {
+                gl_FragColor = vec4( 0.0, 0.0, 0.0, 1.0 );
+            }
+            else
+            {
+                gl_FragColor = fColor * texture2D( texture, fTexCoord );
+            }
         }
     </script>
 
@@ -72,5 +79,14 @@
     <button id="ButtonX">Rotate X</button>
     <button id="ButtonY">Rotate Y</button>
     <button id="ButtonZ">Rotate Z</button>
+    <button id="ToggleRotation">Toggle Rotation</button>
+    <button id="ToggleAnimation">Toggle Animation</button>
+
+    <img id="animImage1" src="images/character1sprites.png" hidden />
+    <img id="animImage2" src="images/character2sprites.png" hidden />
+    <img id="animImage3" src="images/character3sprites.png" hidden />
+    <img id="animImage4" src="images/character4sprites.png" hidden />
+    <img id="animImage5" src="images/character5sprites.png" hidden />
+    <img id="animImage6" src="images/character6sprites.png" hidden />
 </body>
 </html>

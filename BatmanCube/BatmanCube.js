@@ -16,11 +16,17 @@ var pointsArray = [];
 var colorsArray = [];
 var texCoordsArray = [];
 
+var imgIndex = 1;
+var rotate = true;
+var animate = true;
+
 var texCoord = [
-    vec2(0, 0),
-    vec2(0, 1),
-    vec2(1, 1),
-    vec2(1, 0)
+    [vec2(0, 0), vec2(0, 0.5), vec2(0.25, 0.5), vec2(0.25, 0)],
+    [vec2(0, 0.5), vec2(0, 1), vec2(0.25, 1), vec2(0.25, 0.5)],
+    [vec2(0.25, 0), vec2(0.25, 0.5), vec2(0.5, 0.5), vec2(0.5, 0)],
+    [vec2(0.25, 0.5), vec2(0.25, 1), vec2(0.5, 1), vec2(0.5, 0.5)],
+    [vec2(0.5, 0), vec2(0.5, 0.5), vec2(0.75, 0.5), vec2(0.75, 0)],
+    [vec2(0.5, 0.5), vec2(0.5, 1), vec2(0.75, 1), vec2(0.75, 0.5)]
 ];
 
 var vertices = [
@@ -53,6 +59,7 @@ var axis = xAxis;
 var theta = [45.0, 45.0, 45.0];
 var thetaLoc;
 
+var drawBlackLoc;
 
 window.onload = function init() {
     canvas = document.getElementById("gl-canvas");
@@ -107,8 +114,6 @@ window.onload = function init() {
     gl.vertexAttribPointer(vTexCoord, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vTexCoord);
 
-    configureTexture(checkerImage);
-
     thetaLoc = gl.getUniformLocation(program, "theta");
 
     document.getElementById("ButtonX").onclick =
@@ -126,6 +131,21 @@ window.onload = function init() {
             axis = zAxis;
         };
 
+    document.getElementById("ToggleRotation").onclick =
+        function () {
+            rotate = !rotate;
+        };
+
+    document.getElementById("ToggleAnimation").onclick =
+        function () {
+            animate = !animate;
+        };
+
+    flipImage();
+
+    drawBlackLoc = gl.getUniformLocation(program, "drawBlack");
+    gl.uniform1i(drawBlackLoc, false);
+
     render();
 }
 
@@ -133,7 +153,7 @@ function configureTexture(image) {
     var texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, texSize, texSize, 0,
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,
         gl.RGBA, gl.UNSIGNED_BYTE, image);
     gl.generateMipmap(gl.TEXTURE_2D);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
@@ -142,44 +162,71 @@ function configureTexture(image) {
 }
 
 function colorCube() {
-    quad(1, 0, 3, 2);
-    quad(2, 3, 7, 6);
-    quad(3, 0, 4, 7);
-    quad(5, 1, 2, 6);
-    quad(4, 5, 6, 7);
-    quad(5, 4, 0, 1);
+    quad(1, 0, 3, 2, 0);
+    quad(2, 3, 7, 6, 1);
+    quad(3, 0, 4, 7, 2);
+    quad(5, 1, 2, 6, 3);
+    quad(4, 5, 6, 7, 4);
+    quad(5, 4, 0, 1, 5);
 }
 
-function quad(a, b, c, d) {
+function quad(a, b, c, d, faceIndex) {
     pointsArray.push(vertices[a]);
-    colorsArray.push(vertexColors[c]);
-    texCoordsArray.push(texCoord[0]);
+    colorsArray.push(vertexColors[5]);
+    texCoordsArray.push(texCoord[faceIndex][0]);
 
     pointsArray.push(vertices[b]);
-    colorsArray.push(vertexColors[c]);
-    texCoordsArray.push(texCoord[1]);
+    colorsArray.push(vertexColors[5]);
+    texCoordsArray.push(texCoord[faceIndex][1]);
 
     pointsArray.push(vertices[c]);
-    colorsArray.push(vertexColors[c]);
-    texCoordsArray.push(texCoord[2]);
+    colorsArray.push(vertexColors[5]);
+    texCoordsArray.push(texCoord[faceIndex][2]);
 
     pointsArray.push(vertices[a]);
-    colorsArray.push(vertexColors[c]);
-    texCoordsArray.push(texCoord[0]);
+    colorsArray.push(vertexColors[5]);
+    texCoordsArray.push(texCoord[faceIndex][0]);
 
     pointsArray.push(vertices[c]);
-    colorsArray.push(vertexColors[c]);
-    texCoordsArray.push(texCoord[2]);
+    colorsArray.push(vertexColors[5]);
+    texCoordsArray.push(texCoord[faceIndex][2]);
 
     pointsArray.push(vertices[d]);
-    colorsArray.push(vertexColors[c]);
-    texCoordsArray.push(texCoord[3]);
+    colorsArray.push(vertexColors[5]);
+    texCoordsArray.push(texCoord[faceIndex][3]);
+}
+
+function flipImage() {
+    setTimeout(function () {
+        if (animate) {
+            ++imgIndex;
+            if (imgIndex > 6)
+                imgIndex = 1;
+
+            configureTexture(document.getElementById("animImage" + imgIndex));
+        }
+
+        flipImage();
+    }, 100);
 }
 
 function render() {
+
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    theta[axis] += 2.0;
-    gl.uniform3fv(thetaLoc, theta);
+    if (rotate == true) {
+        theta[axis] += 2.0;
+        gl.uniform3fv(thetaLoc, theta);
+    }
+
+    gl.uniform1i(drawBlackLoc, false);
     gl.drawArrays(gl.TRIANGLES, 0, numVertices);
+
+    gl.uniform1i(drawBlackLoc, true);
+    for (var i = 0; i < 6; ++i) {
+        gl.drawArrays(gl.LINES, i * 6, 2);
+        gl.drawArrays(gl.LINES, i * 6 + 1, 2);
+        gl.drawArrays(gl.LINES, i * 6 + 4, 2);
+    }
+
     requestAnimFrame(render);
 }
